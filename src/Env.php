@@ -6,7 +6,7 @@ use Kahlan\Suite;
 use Dotenv\Dotenv;
 use Kahlan\Cli\Kahlan;
 use Kahlan\Plugin\Stub;
-use Kahlan\Filter\Filter;
+use Kahlan\Filter\Filters;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -75,11 +75,11 @@ class Env
         $commandLine->option('env', ['array' => true]);
         $commandLine->option('no-laravel', ['type' => 'boolean']);
 
-        Filter::register('laravel.env', function ($chain) use ($commandLine, $env) {
+        Filters::apply($kahlan, 'interceptor', function ($next) use ($commandLine, $env) {
             $env->loadEnvFromFile('.env.kahlan');
             $env->loadEnvFromCli($commandLine);
 
-            return $chain->next();
+            return $next();
         });
 
         /*
@@ -87,7 +87,8 @@ class Env
         | Create Laravel context for specs
         |--------------------------------------------------------------------------
         */
-        Filter::register('laravel.start', function ($chain) use ($commandLine, $env, $kahlan) {
+
+        Filters::apply($kahlan, 'interceptor', function ($next) use ($commandLine, $env, $kahlan) {
             // Due to the fact that Laravel is refreshed for each single spec,
             // it has huge impact on performance, that's why we will allow
             // disabling laravel at runtime for specs not relying on it.
@@ -99,18 +100,10 @@ class Env
                 $kahlan->suite()->afterEach($env->beforeLaravelDestroyed());
             }
 
-            return $chain->next();
+            return $next();
         });
 
         require __DIR__.'/helpers.php';
-
-        /*
-        |--------------------------------------------------------------------------
-        | Apply customizations
-        |--------------------------------------------------------------------------
-        */
-        Filter::apply($kahlan, 'interceptor', 'laravel.env');
-        Filter::apply($kahlan, 'interceptor', 'laravel.start');
     }
 
     /**
@@ -228,9 +221,9 @@ class Env
 
             case self::WITHOUT_EVENTS:
                 $before = function () {
-                            $mock = Stub::create(['implements' => ['Illuminate\Contracts\Events\Dispatcher']]);
-                            Suite::current()->laravel->app->instance('events', $mock);
-                        };
+                    $mock = Stub::create(['implements' => ['Illuminate\Contracts\Events\Dispatcher']]);
+                    Suite::current()->laravel->app->instance('events', $mock);
+                };
                 $after = null;
                 break;
 

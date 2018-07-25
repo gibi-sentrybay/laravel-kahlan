@@ -1,5 +1,5 @@
 {
-    "name": "gibi-sentrybay/laravel-kahlan",
+    "name": "sentrybay/laravel-kahlan",
     "description": "Kahlan specs suite for testing Laravel applications",
     "keywords": ["laravel", "testing", "bdd", "kahlan", "spec", "tdd"],
     "license": "MIT",
